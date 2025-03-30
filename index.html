@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Low-Poly 3D Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
@@ -13,28 +14,32 @@
         // Setup scene, camera, and renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); // Enable antialiasing
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // Enable shadows
         document.body.appendChild(renderer.domElement);
 
-        // Create ground plane
+        // Ground
         const groundGeometry = new THREE.PlaneGeometry(50, 50);
-        const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x88CC88 }); // Greenish color
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x88CC88 });
         const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2; // Rotate to lay flat
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true; // Ground receives shadows
         scene.add(ground);
 
-        // Function to create a simple tree
+        // Tree function
         function createTree(x, z) {
             const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 8);
-            const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x663300 }); // Brown
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x663300 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.set(x, 1.5, z);
+            trunk.castShadow = true; // Tree casts shadow
 
             const leavesGeometry = new THREE.ConeGeometry(2, 4, 8);
-            const leavesMaterial = new THREE.MeshBasicMaterial({ color: 0x008800 }); // Darker green
+            const leavesMaterial = new THREE.MeshLambertMaterial({ color: 0x008800 });
             const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
             leaves.position.set(x, 4, z);
+            leaves.castShadow = true; // Tree casts shadow
 
             const tree = new THREE.Group();
             tree.add(trunk);
@@ -42,38 +47,64 @@
             scene.add(tree);
         }
 
-        // Create trees
+        // Trees
         createTree(5, 5);
         createTree(-8, 10);
         createTree(12, -7);
 
-        // Create a simple dinosaur (basic representation)
+        // Dinosaur
         const dinoGeometry = new THREE.BoxGeometry(3, 2, 6);
-        const dinoMaterial = new THREE.MeshBasicMaterial({ color: 0x999999 }); // Gray
+        const dinoMaterial = new THREE.MeshLambertMaterial({ color: 0x999999 });
         const dino = new THREE.Mesh(dinoGeometry, dinoMaterial);
         dino.position.set(15, 1, -10);
+        dino.castShadow = true; // Dino casts shadow
         scene.add(dino);
 
-        // Create a simple river (plane with blue color)
+        // River
         const riverGeometry = new THREE.PlaneGeometry(10, 20);
-        const riverMaterial = new THREE.MeshBasicMaterial({ color: 0x0088FF }); // Blue
+        const riverMaterial = new THREE.MeshLambertMaterial({ color: 0x0088FF });
         const river = new THREE.Mesh(riverGeometry, riverMaterial);
         river.rotation.x = -Math.PI / 2;
-        river.position.set(-10, 0.01, 0); // Slightly above ground
+        river.position.set(-10, 0.01, 0);
+        river.receiveShadow = true; // River receives shadows
         scene.add(river);
 
-        // Set camera position
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(20, 30, 10);
+        directionalLight.castShadow = true; // Sun casts shadows
+        directionalLight.shadow.mapSize.width = 1024; // Shadow quality
+        directionalLight.shadow.mapSize.height = 1024;
+        scene.add(directionalLight);
+
+        // Fog
+        scene.fog = new THREE.Fog(0xAAAAAA, 10, 50); // Gray fog
+
+        // Camera
         camera.position.set(20, 15, 20);
         camera.lookAt(0, 0, 0);
 
-        // Animation loop
+        // Day/Night Cycle
+        let time = 0;
+        const dayDuration = 60; // Seconds for a full day/night cycle
+
         function animate() {
             requestAnimationFrame(animate);
+
+            // Day/Night Cycle
+            time += 0.01;
+            const sunIntensity = Math.sin(time) * 0.5 + 0.5; // Intensity between 0 and 1
+            directionalLight.intensity = sunIntensity;
+            directionalLight.color.setHSL(0.1, 1, sunIntensity / 2); // Change sun color
+
             renderer.render(scene, camera);
         }
         animate();
 
-        // Handle window resize
+        // Resize
         window.addEventListener('resize', () => {
             const newWidth = window.innerWidth;
             const newHeight = window.innerHeight;
