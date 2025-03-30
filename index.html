@@ -23,9 +23,9 @@
 
         // Lights (Ambient and Directional) ...
 
-        // Skybox (gradient)
+        // Skybox (Gradient)
         const skyGeometry = new THREE.SphereGeometry(500, 32, 32);
-        const skyMaterial = new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide }); // Light blue
+        const skyMaterial = new THREE.MeshBasicMaterial({ side: THREE.BackSide }); // Important: BackSide
         const sky = new THREE.Mesh(skyGeometry, skyMaterial);
         scene.add(sky);
 
@@ -67,10 +67,19 @@
             skyMaterial.color = skyColor;
 
             // Movement
-            if (moveForward) camera.translateZ(-velocity);
-            if (moveBackward) camera.translateZ(velocity);
-            if (moveLeft) camera.translateX(-velocity);
-            if (moveRight) camera.translateX(velocity);
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            direction.y = 0; // Prevent vertical movement
+            direction.normalize();
+
+            const right = new THREE.Vector3();
+            right.crossVectors(direction, camera.up);
+            right.normalize();
+
+            if (moveForward) camera.position.add(direction.clone().multiplyScalar(velocity));
+            if (moveBackward) camera.position.sub(direction.clone().multiplyScalar(velocity));
+            if (moveLeft) camera.position.sub(right.clone().multiplyScalar(velocity));
+            if (moveRight) camera.position.add(right.clone().multiplyScalar(velocity));
 
             renderer.render(scene, camera);
         }
